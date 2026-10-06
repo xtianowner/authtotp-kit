@@ -1,0 +1,289 @@
+/* 保险库内页（干活层）的 HUD 语言 —— 视觉基线 v1.4 §14（AuthTOTP 全站暗色）、§13 AuthTOTP「HUD 网格」，克制版。
+   只由 src/components/Dashboard.jsx 引入，进保险库内页自己的 CSS 分包：公开构建（dist-public）、展示层 4 页和登录页
+   都不加载本文件，所以这里对弹层（.dialog-panel，portal 到 body）的规则也只作用于保险库内页的弹层。
+   全部静态：网格背景、卡面 2 材质（渐变细描边 + 颗粒）、细线编号、侧栏发光细线都不动，也不创建 WebGL；没有扫描光带、
+   视频、滚动驱动。会动的只在 vault-motion.css（错峰入场、页面转场、侧栏高亮滑动、解码定格、翻牌换码、悬停绕边光、
+   角标锁定复制）。颜色只用 tokens.css 的 token；--glow 只用于光晕、发光描边，不用于文字。 */
+
+/* ---------- 页面背景：静态 HUD 网格（与展示层 .sc-grid 同语言、更淡，从顶部向下淡出）+ 顶部一层极淡的发光 ----------
+   画在 body::before 上：这个固定层由 index.css 从首帧起就放好（为什么必须从首帧就有，见那里的注释），平时为空；
+   保险库内页挂载时（body:has(.vh)）才填上网格并用 0.45s 淡入，和登录后内页的淡入同步。不动、不随滚动变化。 */
+body::before {
+  opacity: 0;
+  background-image:
+    radial-gradient(60% 520px at 50% 0%, rgba(var(--glow), 0.09), rgba(var(--glow), 0) 70%),
+    linear-gradient(rgba(var(--glow), 0.05) 1px, rgba(var(--glow), 0) 1px),
+    linear-gradient(90deg, rgba(var(--glow), 0.05) 1px, rgba(var(--glow), 0) 1px);
+  background-size: 100% 100%, 64px 64px, 64px 64px;
+  background-position: 0 0, center top, center top;
+  -webkit-mask-image: radial-gradient(ellipse 95% 80% at 50% 0%, #000 30%, rgba(0, 0, 0, 0) 92%);
+  mask-image: radial-gradient(ellipse 95% 80% at 50% 0%, #000 30%, rgba(0, 0, 0, 0) 92%);
+  transition: opacity var(--dur) var(--ease);
+}
+body:has(.vh)::before { opacity: 1; }
+
+/* ---------- 顶栏 / 手机底栏：不透明的页面底色（= theme-color #0D1117，滚过的内容不会透出来），青绿发丝线分隔 ---------- */
+.vh .topbar { border-bottom-color: rgba(var(--accent), 0.14); background: rgb(var(--bg)); }
+.vh .mobile-nav { border-top-color: rgba(var(--accent), 0.14); background: rgb(var(--bg)); }
+/* 品牌标：与展示层顶栏 .sc-mark 同款（描边 + 极淡发光底），不再是实心色块 */
+.vh .brand-mark {
+  border: 1px solid rgba(var(--accent), 0.5);
+  border-radius: var(--radius-field);
+  background: rgba(var(--glow), 0.08);
+  color: rgb(var(--accent));
+  box-shadow: none;
+}
+
+/* ---------- 细线编号：页标题上方的等宽小字（与展示层 .sc-tag / .sc-panel-head 同款）---------- */
+.vh-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: rgb(var(--accent));
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+}
+.vh-tag::after {
+  content: '';
+  flex: 0 1 56px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(var(--accent), 0.6), rgba(var(--accent), 0));
+}
+.vh-tag span { color: rgb(var(--muted)); }
+
+/* ---------- 卡面 2 · 渐变细描边（单卡 demo D 选定，从 src/lab/vault-cards/d/d.css 复制）----------
+   近乎平的灰蓝面（--bg-tint，不发黑）+ 1px 青绿 → 透明 → 青绿的渐变描边（左上、右下最亮）+ 一层极淡的颗粒
+   （SVG 噪点，data: URI，CSP img-src 已允许 data:）。.vf 只是材质：条目卡、调用方卡、统计卡、审计面板、侧栏说明卡、
+   空状态卡都用它，各自结构不变。描边、颗粒是 z-index -1 的伪元素，压在内容下面（.vf 自己建堆叠上下文）。
+   悬停绕边光（.vf-trace，会动）在 vault-motion.css，只给可交互的卡（条目卡、调用方卡，加 .vf-hover）。 */
+.vh .vf {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: rgb(var(--bg-tint));
+  box-shadow: var(--shadow);
+  transition: box-shadow var(--dur) var(--ease);
+}
+.vh .vf::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(var(--accent), 0.75), rgba(var(--accent), 0) 38%, rgba(var(--accent), 0) 62%, rgba(var(--accent), 0.75));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.vh .vf::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* 卡内的底块（调用方卡的凭据信息、审计表头）：原来的 --bg-tint 底在 .vf 上看不出来，改成略深一档的凹槽
+   （往亮处提会把块内 --muted 小字压到 4.5:1 以下）。审计行悬停只提亮一点，悬停时 --muted 小字仍 ≥ 4.6:1。 */
+.vh .vf-well { background: rgba(var(--bg), 0.3); }
+.vh .vf .list-row:hover { background: rgba(var(--heading), 0.035); }
+
+/* 卡片网格（验证码库、调用方、骨架）：每张卡至少 26rem 宽，内容区放得下两张才并排，最多两列（内容区最宽 1008px）；
+   1440 宽一行两张约 496px，底部小字和 8 位验证码都不折行；手机一列。 */
+.vf-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr)); }
+
+/* 条目卡布局（demo D Face.jsx）：头部 → 验证码区（主角）→ 底部一行小字 → 低频操作。行内卡片等高，
+   多出的高度放在验证码区上方，同一行卡片的验证码区与底部小字对齐。 */
+.vf-entry { display: flex; flex-direction: column; gap: 18px; height: 100%; padding: 20px; }
+.vf-head { position: relative; display: flex; align-items: center; gap: 12px; }
+.vf-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(var(--accent), 0.28);
+  border-radius: 8px;
+  background: rgba(var(--accent), 0.12);
+  color: rgb(var(--accent-strong));
+  font-weight: 700;
+}
+.vf-title { flex: 1; min-width: 0; }
+.vf-title h3 { font-size: 1rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.vf-title p { margin-top: 2px; color: rgb(var(--text)); font-size: 0.8125rem; overflow-wrap: anywhere; }
+.vf-status { display: inline-flex; flex: none; align-items: center; gap: 6px; color: rgb(var(--accent)); font-size: 0.75rem; font-weight: 700; }
+.vf-status i { width: 7px; height: 7px; border-radius: 50%; background: rgb(var(--accent)); box-shadow: 0 0 6px rgba(var(--glow), 0.9); }
+.vf-status.is-off { color: rgb(var(--muted)); }
+.vf-status.is-off i { background: rgb(var(--muted)); box-shadow: none; }
+.vf-code { position: relative; display: grid; gap: 14px; margin-top: auto; }
+.vf-bar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+/* 复制 / 查看按钮：与卡面同材质的青绿细描边按钮（demo D .df-2 .df-copy） */
+.vf-copy, .vf-reveal {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(var(--accent), 0.45);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: rgb(var(--accent));
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.vf-copy { min-width: 6.5rem; }
+.vf-reveal { flex: 1; }
+.vf-copy:hover, .vf-reveal:hover:not(:disabled) { background: rgba(var(--accent), 0.08); }
+.vf-copy.is-copied { background: rgba(var(--accent), 0.12); }
+.vf-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: rgb(var(--muted));
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.vf-icon:hover { background: rgba(var(--heading), 0.06); color: rgb(var(--heading)); }
+/* 底部一行小字：用途 · 规格 · 调用方 · 截断的条目 ID（完整值在 title 里，复制总是完整值） */
+.vf-meta {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(var(--heading), 0.07);
+  color: rgb(var(--muted));
+  font-size: 0.75rem;
+}
+.vf-dot { opacity: 0.6; }
+/* 高风险用途（管理员、财务）：用途文字前一个琥珀色小圆点，文字保持灰色 */
+.vf-risk { display: inline-block; width: 6px; height: 6px; margin: 0 5px 1px 0; border-radius: 50%; background: rgb(var(--warning)); vertical-align: middle; }
+.vf-id { display: inline-flex; align-items: center; gap: 2px; min-width: 0; margin-left: auto; }
+.vf-id code { overflow: hidden; color: rgb(var(--text)); font-size: 0.75rem; white-space: nowrap; text-overflow: ellipsis; }
+.vf-id-copy {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgb(var(--muted));
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.vf-id-copy::before { content: ''; position: absolute; inset: -7px; } /* 命中区 44px */
+.vf-id-copy:hover { background: rgba(var(--heading), 0.06); color: rgb(var(--accent)); }
+.vf-id-copy.is-copied { color: rgb(var(--accent)); }
+/* 低频操作（编辑、停用 / 启用、停用后永久删除）：安静的文字按钮，文字与卡片内容左右对齐 */
+.vf-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -8px -12px -10px; }
+@media (max-width: 480px) { .vf-entry { padding: 16px; } }
+
+/* ---------- 侧栏 / 抽屉 / 手机底栏：当前项的高亮底块带一条发光细线（随 layoutId 一起滑动）---------- */
+.vh .vm-nav-pill { box-shadow: inset 0 0 0 1px rgba(var(--accent), 0.22); }
+.vh .vm-nav-pill::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 5px;
+  width: 2px;
+  height: 16px;
+  margin-top: -8px;
+  border-radius: 2px;
+  background: rgb(var(--accent));
+  box-shadow: 0 0 6px rgba(var(--glow), 0.9), 0 0 14px rgba(var(--glow), 0.45);
+}
+.vh .vm-tab-pill { box-shadow: inset 0 0 0 1px rgba(var(--accent), 0.18); }
+.vh .vm-tab-pill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 32%;
+  right: 32%;
+  height: 2px;
+  border-radius: 2px;
+  background: rgb(var(--accent));
+  box-shadow: 0 0 6px rgba(var(--glow), 0.9), 0 0 14px rgba(var(--glow), 0.45);
+}
+
+/* ---------- 按钮与弹层：与登录页同款的轻微发光 ---------- */
+.vh .btn-primary,
+.dialog-panel .btn-primary { box-shadow: 0 0 20px rgba(var(--glow), 0.28); }
+.vh .btn-primary:disabled,
+.dialog-panel .btn-primary:disabled { box-shadow: none; }
+/* 弹层面板：青绿细描边 + 左上角标。只放左上：长弹层在面板内滚动，右下角标会停在内容中间；面板是滚动容器
+   （overflow-y: auto），角标画在描边内侧，否则会被裁掉一半。 */
+.dialog-panel {
+  position: relative;
+  border-color: rgba(var(--accent), 0.22);
+  box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(var(--accent), 0.08);
+}
+.dialog-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  border: 0 solid rgba(var(--accent), 0.85);
+  border-top-width: 2px;
+  border-left-width: 2px;
+  border-top-left-radius: calc(var(--radius-card) - 1px);
+  pointer-events: none;
+}
+
+/* ---------- 令牌有效期单选胶囊（src/components/ui/TokenLifetime.jsx；新增令牌 / 创建调用方弹层共用）----------
+   普通胶囊单选：未选 = 卡内凹槽底 + 发丝线；选中 = 青绿细描边 + 极淡青绿底 + 主色字（同 .vf-copy 的描边语言）。
+   不发光、不流光。手机三列（「永不过期」占两格补齐第二行），sm 起一行五个。 */
+.ttl-group { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ttl-group > :last-child { grid-column: span 2; }
+@media (min-width: 640px) {
+  .ttl-group { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .ttl-group > :last-child { grid-column: auto; }
+}
+.ttl-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid rgb(var(--border));
+  border-radius: var(--radius-pill);
+  background: rgb(var(--bg-tint));
+  color: rgb(var(--muted));
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.ttl-pill:hover { border-color: rgba(var(--accent), 0.45); color: rgb(var(--heading)); }
+.ttl-pill:has(input:checked) { border-color: rgba(var(--accent), 0.6); background: rgba(var(--accent), 0.12); color: rgb(var(--accent-ink)); }
+.ttl-pill:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(var(--accent), 0.25); }
+fieldset:disabled .ttl-pill { cursor: not-allowed; opacity: 0.6; }
+
+/* 新增令牌弹层顶部的所选条目（只读）：卡内凹槽底 + 与条目卡同款首字母头像 */
+.token-entry { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid rgb(var(--border)); border-radius: var(--radius-card); background: rgb(var(--bg-tint)); }

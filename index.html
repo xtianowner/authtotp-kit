@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- 全站只做暗色（视觉基线 v1.4 §14）：浏览器界面色 = 页面底 --bg 13,17,23（src/styles/tokens.css）；color-scheme 让 CSS 到达前的首帧也是暗底，任何路径都不闪浅色 -->
+    <meta name="theme-color" content="#0D1117" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="AuthTOTP · 浏览器本地动态码工具与私有保险库" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <title>AuthTOTP · 本地动态码与私有保险库</title>
+    <!-- pre-paint：首屏前定界面字号，避免跳动。必须是同源外链脚本：后端 CSP 为 script-src 'self'，内联脚本会被拦截。 -->
+    <script src="/theme-init.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

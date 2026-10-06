@@ -1,0 +1,45 @@
+# /etc/systemd/system/authtotp.service — AuthTOTP vault + code API (listens on 127.0.0.1 only; Caddy terminates TLS)
+# Replace nothing here except, if needed, the port. Paths below match AGENTS.md.
+[Unit]
+Description=AuthTOTP private vault (loopback only, behind Caddy)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=authtotp
+Group=authtotp
+WorkingDirectory=/srv/authtotp/app
+EnvironmentFile=/etc/authtotp/env
+# --no-proxy-headers: the app resolves the client IP itself from AUTHTOTP_TRUSTED_PROXIES (must be set together).
+ExecStart=/srv/authtotp/venv/bin/python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 18473 --workers 1 --no-proxy-headers
+Restart=on-failure
+UMask=0077
+# Hard RAM ceiling; no core dumps (a dump would hold process memory: master-key copies, decrypted seeds).
+MemoryMax=512M
+LimitCORE=0
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/authtotp/data
+# Hide other services' data from this process, e.g. InaccessiblePaths=-/srv/other-app -/home/git
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+# The vault never needs to call out; only loopback (Caddy) may talk to it.
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title">
+  <title id="title">AuthTOTP shield timer</title>
+  <rect width="1024" height="1024" rx="230" fill="#0D9488"/>
+  <path fill="#FFFFFF" d="M512 164c97 78 184 112 282 128v224c0 187-112 311-282 374-170-63-282-187-282-374V292c98-16 185-50 282-128Z"/>
+  <path d="M512 522 640 372" fill="none" stroke="#0D9488" stroke-linecap="round" stroke-width="62"/>
+  <circle cx="512" cy="522" r="68" fill="#0D9488"/>
+</svg>

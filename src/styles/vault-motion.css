@@ -1,0 +1,171 @@
+/* 保险库内页（干活层）动效样式 —— 视觉基线 v1.3 §0「动而不挡事」、§5 动效、§13「通用」手法。
+   只由 src/components/Dashboard.jsx 引入，进保险库内页自己的 CSS 分包：公开构建（dist-public）和展示层 4 页不加载本文件。
+   只引用 tokens.css 里的 token（逗号三元组：不透明 rgb(var(--x))，半透明 rgba(var(--x), a)），不引入新色值。
+   全站只做暗色（视觉基线 v1.4 §14），这里只有一套暗色样式；发光一律用 --glow，不用于文字。
+   动的只有 transform / opacity；「减少动态效果」时去掉位移和缩放，只留透明度与颜色（文件末尾）。
+   HUD 静态装饰（网格背景、卡面 2 材质、编号、侧栏发光细线）在 vault-hud.css。 */
+
+/* ===== 复制反馈：HUD 角标锁定（src/components/ui/copyFeedback.jsx 的 CopyLock）=====
+   复制成功：四个 L 形角标从外侧收拢、扣到按钮边缘（0.3s），随「已复制」停留，状态结束时一起淡出（淡出后才复位位移）。
+   角标用 --accent，带一圈轻微的 --glow 光晕。尺寸可由按钮用变量调（卡面 2 的复制按钮、条目 ID 复制图标）。 */
+.vm-copy { position: relative; }
+.vm-lock { position: absolute; inset: var(--lock-inset, -3px); pointer-events: none; }
+.vm-lock i {
+  position: absolute;
+  width: var(--lock-size, 9px);
+  height: var(--lock-size, 9px);
+  border: 0 solid rgb(var(--accent));
+  filter: drop-shadow(0 0 3px rgba(var(--glow), var(--lock-glow, 0.6)));
+  opacity: 0;
+  transform: translate(var(--lock-dx), var(--lock-dy));
+  transition: opacity 0.25s var(--ease), transform 0s linear 0.25s;
+}
+.vm-lock i:nth-child(1) { top: 0; left: 0; border-top-width: var(--lock-w, 2px); border-left-width: var(--lock-w, 2px); --lock-dx: calc(var(--lock-travel, 6px) * -1); --lock-dy: calc(var(--lock-travel, 6px) * -1); }
+.vm-lock i:nth-child(2) { top: 0; right: 0; border-top-width: var(--lock-w, 2px); border-right-width: var(--lock-w, 2px); --lock-dx: var(--lock-travel, 6px); --lock-dy: calc(var(--lock-travel, 6px) * -1); }
+.vm-lock i:nth-child(3) { bottom: 0; left: 0; border-bottom-width: var(--lock-w, 2px); border-left-width: var(--lock-w, 2px); --lock-dx: calc(var(--lock-travel, 6px) * -1); --lock-dy: var(--lock-travel, 6px); }
+.vm-lock i:nth-child(4) { right: 0; bottom: 0; border-right-width: var(--lock-w, 2px); border-bottom-width: var(--lock-w, 2px); --lock-dx: var(--lock-travel, 6px); --lock-dy: var(--lock-travel, 6px); }
+.vm-lock.is-on i { opacity: 1; transform: none; transition: opacity 0.15s var(--ease), transform 0.3s var(--ease); }
+.vf-copy .vm-lock { --lock-inset: -6px; --lock-size: 10px; --lock-travel: 7px; --lock-glow: 0.8; }
+.vf-id-copy .vm-lock { --lock-inset: -2px; --lock-size: 7px; --lock-travel: 5px; --lock-w: 1.5px; --lock-glow: 0.8; }
+
+/* ===== 统计卡数字：乱码解码定格（src/components/ui/DecodeNumber.jsx）=====
+   每位数字一个定宽格（1ch、等宽数字），乱跳时宽度不变；乱跳中用主色 --accent，定格后回到标题色。 */
+.vm-dec-cell {
+  display: inline-block;
+  width: 1ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s var(--ease);
+}
+/* .summary-card span（标签小字）不能波及数字格：字号、颜色回到 strong 本身 */
+.summary-card .vm-dec span { font-size: inherit; line-height: inherit; color: inherit; }
+.vm-dec .vm-dec-cell[data-state='scramble'] { color: rgb(var(--accent)); }
+
+/* ===== 侧栏 / 抽屉 / 底部栏：当前项高亮底块随切换滑过去（Dashboard.jsx 的 layoutId）=====
+   高亮底块接管 .nav-item.active 原来的底色，文字颜色仍由 .active 决定。 */
+.vm-nav-item { position: relative; isolation: isolate; }
+.nav-item.vm-nav-item.active { background: transparent; }
+.vm-nav-pill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(var(--accent), 0.1);
+}
+.vm-tab { position: relative; isolation: isolate; }
+.vm-tab-pill {
+  position: absolute;
+  inset: 6px 8px;
+  z-index: -1;
+  border-radius: var(--radius-card);
+  background: rgba(var(--accent), 0.1);
+}
+
+/* ===== 卡面 2 · 悬停绕边光（单卡 demo D，src/lab/vault-cards/d/d.css 复制）=====
+   一圈 1.5px 的环形遮罩后面转着一道青绿彗星（conic，只动 transform），外加一层模糊的柔光；只在悬停或键盘焦点
+   （:focus-visible）时出现并转动，平时透明且暂停。只给可交互的卡（.vf-hover：条目卡、调用方卡）。 */
+.vf-trace {
+  position: absolute;
+  inset: -1px;
+  z-index: 2;
+  padding: 1.5px;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.vf-trace i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  aspect-ratio: 1;
+  margin: -100% 0 0 -100%;
+  background: conic-gradient(from 0deg, rgba(var(--accent), 0) 0deg 240deg, rgba(var(--accent), 0.35) 300deg, rgb(var(--accent)) 340deg, rgb(var(--heading)) 354deg, rgba(var(--accent), 0) 360deg);
+  animation: vf-spin 3.2s linear infinite;
+  animation-play-state: paused;
+}
+.vf-trace-soft { inset: 0; padding: 7px; }
+.vf-trace-soft i { filter: blur(6px); opacity: 0.55; }
+.vf-hover:has(:focus-visible) .vf-trace { opacity: 1; }
+.vf-hover:has(:focus-visible) .vf-trace i { animation-play-state: running; }
+/* 触屏没有真正的悬停：点一下会留下粘住的 :hover，所以悬停只认能悬停的指针 */
+@media (hover: hover) {
+  .vf-hover:hover .vf-trace { opacity: 1; }
+  .vf-hover:hover .vf-trace i { animation-play-state: running; }
+}
+
+/* ===== 查看验证码：展示 ①「精修翻牌 + 彗星环读条」（src/components/ui/FlipCode.jsx，demo D 复制）=====
+   翻牌：每位一块牌，牌底与卡面同色（没有方框），只留一条细中缝；3+3 分组。牌宽按验证码区宽度缩放，6–8 位不溢出。
+   读条：左侧 64px 细环 + 彗星头；最后 5 秒（data-warn="1"）环、头、秒数转琥珀色 --warning，头 2 Hz 闪。 */
+.vm-flip { display: flex; align-items: center; gap: 16px; }
+.vm-flip-hit { flex: 1; min-width: 0; padding: 0; border: 0; background: transparent; cursor: copy; container-type: inline-size; }
+.vm-flip-hit:disabled { cursor: default; opacity: 1; }
+.vm-tiles { display: flex; justify-content: center; gap: 3px; --tw: min(2.75rem, calc((100cqw - 30px) / (var(--n) + 0.35))); }
+.vm-tile {
+  position: relative;
+  flex: none;
+  width: var(--tw);
+  height: calc(var(--tw) * 1.42);
+  perspective: 180px;
+  color: rgb(var(--heading));
+  font-family: var(--font-mono);
+  font-size: calc(var(--tw) * 1.12);
+  font-weight: 600;
+  transition: color 0.4s var(--ease);
+}
+.vm-tile[data-state='decoding'] { color: rgb(var(--accent)); }
+.vm-tile[data-state='idle'] { color: rgba(var(--muted), 0.6); }
+.vm-split { margin-left: calc(var(--tw, 1em) * 0.35); }
+.vm-half { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; background: rgb(var(--bg-tint)); -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.vm-up { top: 0; border-radius: 6px 6px 0 0; transform-origin: 50% 100%; }
+.vm-dn { bottom: 0; border-radius: 0 0 6px 6px; transform-origin: 50% 0; }
+.vm-half b { position: absolute; left: 0; right: 0; display: grid; place-items: center; height: 200%; font-weight: inherit; line-height: 1; text-shadow: 0 0 14px rgba(var(--glow), 0.35); }
+.vm-up b { top: 0; }
+.vm-dn b { bottom: 0; }
+.vm-flap { z-index: 2; }
+.vm-flap[data-on='0'] { visibility: hidden; }
+/* 唯一保留的线：一条细中缝 */
+.vm-tile::after { content: ''; position: absolute; left: 6%; right: 6%; top: 50%; z-index: 3; height: 1px; margin-top: -0.5px; background: rgba(var(--bg), 0.75); }
+
+.vm-ring { position: relative; flex: none; width: 64px; height: 64px; }
+.vm-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.vm-ring-track { fill: none; stroke: rgba(var(--glow), 0.14); stroke-width: 2; }
+.vm-ring-arc { fill: none; stroke: rgb(var(--accent)); stroke-width: 2.5; stroke-linecap: round; transition: stroke 0.3s var(--ease); }
+.vm-comet { position: absolute; inset: 0; will-change: transform; }
+.vm-tail {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(var(--accent), 0) 0deg 285deg, rgba(var(--accent), 0.8) 360deg);
+  -webkit-mask: radial-gradient(circle closest-side, rgba(0, 0, 0, 0) 25.5px, #000 26.5px, #000 29.5px, rgba(0, 0, 0, 0) 30.5px);
+  mask: radial-gradient(circle closest-side, rgba(0, 0, 0, 0) 25.5px, #000 26.5px, #000 29.5px, rgba(0, 0, 0, 0) 30.5px);
+}
+.vm-tail::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, rgba(var(--warning), 0) 0deg 300deg, rgba(var(--warning), 0.75) 360deg); opacity: 0; transition: opacity 0.3s var(--ease); }
+.vm-head { position: absolute; top: 0.5px; left: calc(50% - 3.5px); width: 7px; height: 7px; border-radius: 50%; background: rgb(var(--heading)); box-shadow: 0 0 6px 2px rgba(var(--glow), 0.85), 0 0 16px rgba(var(--glow), 0.5); transition: background-color 0.3s var(--ease), box-shadow 0.3s var(--ease); }
+.vm-ring-sec { position: absolute; inset: 0; display: grid; place-items: center; color: rgb(var(--heading)); font-family: var(--font-mono); font-size: 1.0625rem; font-variant-numeric: tabular-nums; font-weight: 700; transition: color 0.3s var(--ease); }
+.vm-flip:not(.is-live) .vm-ring-sec { color: rgb(var(--muted)); }
+.vm-flip[data-warn='1'] .vm-ring-arc { stroke: rgb(var(--warning)); }
+.vm-flip[data-warn='1'] .vm-tail { background: none; }
+.vm-flip[data-warn='1'] .vm-tail::after { opacity: 1; }
+.vm-flip[data-warn='1'] .vm-head { background: rgb(var(--warning)); box-shadow: none; animation: vm-blink 0.25s ease-in-out infinite alternate; }
+.vm-flip[data-warn='1'] .vm-ring-sec { color: rgb(var(--warning)); }
+
+@keyframes vf-spin { to { transform: rotate(1turn); } }
+@keyframes vm-blink { from { opacity: 1; } to { opacity: 0.3; } }
+
+/* ===== 减少动态效果：不位移、不缩放，只留透明度和颜色（角标不收拢，只淡入淡出）===== */
+@media (prefers-reduced-motion: reduce) {
+  .vm-lock i { transform: none !important; }
+  /* 绕边光不转，悬停时换成一圈静态的青绿细描边；最后 5 秒的读条头不闪（翻牌由 FlipCode 直接写数字） */
+  .vf-trace { display: none; }
+  .vh .vf-hover:has(:focus-visible) { box-shadow: 0 0 0 1px rgba(var(--accent), 0.5), var(--shadow-lift); }
+  .vm-flip[data-warn='1'] .vm-head { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) and (hover: hover) {
+  .vh .vf-hover:hover { box-shadow: 0 0 0 1px rgba(var(--accent), 0.5), var(--shadow-lift); }
+}

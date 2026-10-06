@@ -1,0 +1,61 @@
+/* AuthTOTP design tokens — 作者视觉基线 v1.4 §14「暗色展示变体」：AuthTOTP 全站只做暗色（公开工具、登录、/code、404、
+   保险库内页与弹窗），没有深浅切换。
+   基线 token 的数值 = 博客暗色主题原值，单一真相源是作者博客的 global.css（视觉基线 v1.4 §2.1 / §14）
+   （暗色段），名称与数值逐字照抄，只能整体同步，不在本项目改值；浅色值不在本项目保留。
+   唯一新增的是 --glow：只给光晕、着色器、扫描线、轮廓光、发光描边用，不用于文字；全站只有这一个发光色相。
+   写法同博客：RGB 三元组，用时写 rgb(var(--accent))，半透明写 rgba(var(--accent), 0.12)。
+   注意：逗号三元组不能配「斜杠 + 透明度」的写法，那是非法颜色，整条声明失效（实测 Chrome 退回黑色；视觉基线 v1.1 §2.1）。
+   第二段起是本项目派生项：只引用基线 token，不引入新色值（状态色、粉彩取自视觉基线 §2.2/§2.3 的深色列）。 */
+
+:root {
+  /* ===== 基线 token（博客暗色）===== */
+  --bg: 13, 17, 23; /* 页面底 */
+  --bg-elev: 22, 27, 34; /* 卡片/顶栏/弹层 */
+  --bg-tint: 30, 36, 46; /* 淡填充（代码底、表头、输入框底）*/
+  --heading: 230, 237, 243; /* 标题 */
+  --text: 201, 209, 217; /* 正文 */
+  --muted: 139, 148, 158; /* 次要 */
+  --border: 43, 50, 60; /* 描边 */
+  --accent: 94, 234, 212; /* 主色（青绿）*/
+  --accent-strong: 153, 246, 228;
+  --glow: 45, 212, 191; /* 唯一发光色相（§14）：不用于文字 */
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.45), 0 18px 48px rgba(0, 0, 0, 0.6);
+  --dur: 0.45s;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ===== 状态色（视觉基线 §2.2 深色列）===== */
+  --success: var(--accent); /* 成功：图标、底色、文字都用 --accent（深底上 ≥ 10:1） */
+  --warning: 251, 191, 36;
+  --danger: 248, 113, 113;
+
+  /* ===== 辅助粉彩（§2.3 深色列，只用于空状态等小面积）===== */
+  --pastel-mint: 17, 94, 89; /* 薄荷 #115E59 */
+
+  /* ===== 主色用法（视觉基线 §2.1 用法表深色列）=====
+     深色下 --accent 做小字、链接、选中态已 ≥ 10:1，直接用；主按钮是 --accent 底加 --bg 深色字，悬停用 --accent-strong。 */
+  --accent-ink: var(--accent); /* 主色小字：链接、选中态文字、胶囊、成功文字 */
+  --accent-fill: var(--accent); /* 主按钮实底 */
+  --accent-fill-hover: rgb(var(--accent-strong));
+  --on-accent: var(--bg); /* 主按钮文字：深色字 */
+  --on-danger: var(--bg);
+  --danger-fill-hover: color-mix(in srgb, rgb(var(--danger)) 88%, rgb(var(--heading)));
+
+  /* ===== 派生：形状 / 动效 / 字体 / 版式 ===== */
+  --radius-card: 12px; /* 卡片、面板、弹层 */
+  --radius-field: 6px; /* 输入框、小标签、代码块 */
+  --radius-pill: 999px; /* 按钮、胶囊、开关 */
+  --dur-fast: 0.15s; /* 按下、开关、悬停变色等小交互 */
+  --font-sans: 'Atkinson', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC', system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --page-max: 1280px; /* 内容最宽 */
+  --page-gutter: clamp(16px, calc(6.1vw - 7.8px), 80px); /* 390 宽 = 16px，1440 宽 = 80px */
+  --topbar-h: 4rem;
+
+  /* z-index */
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+}

@@ -1,0 +1,10 @@
+# /etc/systemd/system/authtotp-backup.timer — runs the backup every day at 04:10 server time; catches up after downtime.
+[Unit]
+Description=Daily AuthTOTP vault backup
+
+[Timer]
+OnCalendar=*-*-* 04:10:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

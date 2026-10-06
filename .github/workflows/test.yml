@@ -1,0 +1,52 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r backend/requirements-dev.txt
+      - run: python -m pytest backend/tests -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run build:public
+      - name: public tool must not reference the vault API
+        run: |
+          if grep -rqE '/api|/v1' dist-public/; then
+            echo "dist-public references /api or /v1" >&2
+            exit 1
+          fi
+      - name: public tool may only reference allowlisted hosts
+        run: |
+          test -f dist-public/index.html
+          bad=$(grep -rhoaE 'https?://[A-Za-z0-9.-]*' dist-public/ | sed -E 's#^https?://##; s#^$#(empty host)#' \
+            | sort -u | grep -vxE 'www\.w3\.org|react\.dev|blog\.xtianowner\.com' || true)
+          if [ -n "$bad" ]; then
+            echo "dist-public references hosts outside the allowlist (www.w3.org, react.dev, blog.xtianowner.com):" >&2
+            printf '%s\n' "$bad" >&2
+            exit 1
+          fi
+      - name: public tool may make at most one fetch( call
+        run: |
+          count=$(grep -rhoaF 'fetch(' dist-public/ | wc -l | tr -d ' ')
+          if [ "$count" -gt 1 ]; then
+            echo "dist-public contains $count fetch( calls (at most 1 allowed: the Vite modulepreload polyfill)" >&2
+            grep -rlaF 'fetch(' dist-public/ >&2
+            exit 1
+          fi

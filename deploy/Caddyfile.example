@@ -1,0 +1,38 @@
+# Append to your Caddyfile, replace the two domains, then: caddy validate && caddy reload.
+# Both domains need DNS A records pointing at this server (DNS only / no CDN proxy, so Caddy can get certificates).
+
+# Private vault + code API. The root path sends visitors to the public tool.
+vault.example.com {
+	# Every legitimate vault / API request body is a few KB; reject anything larger before it reaches the app.
+	request_body {
+		max_size 64KB
+	}
+	redir / https://totp.example.com/ 302
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:18473
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+}
+
+# Public no-account tool: plain static files, no upstream at all, so it can never reach the vault API.
+totp.example.com {
+	root * /srv/static-sites/totp/current
+	encode zstd gzip
+	try_files {path} /index.html
+	file_server
+	header {
+		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+		Strict-Transport-Security "max-age=31536000"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+	@hashed path /assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+	@unhashed not path /assets/*
+	header @unhashed Cache-Control "no-cache"
+}

@@ -1,0 +1,22 @@
+# /etc/systemd/system/authtotp-backup.service — daily online SQLite backup (keeps the newest 14 in /srv/authtotp/data/backups).
+# A backup is useless without the master key (/etc/authtotp/master-key): keep an offline copy of both.
+[Unit]
+Description=AuthTOTP vault daily online backup
+
+[Service]
+Type=oneshot
+User=authtotp
+Group=authtotp
+WorkingDirectory=/srv/authtotp/app
+EnvironmentFile=/etc/authtotp/env
+ExecStart=/srv/authtotp/venv/bin/python -m backend.app.backup --keep 14
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/authtotp/data
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+CapabilityBoundingSet=
+IPAddressDeny=any
+IPAddressAllow=localhost
