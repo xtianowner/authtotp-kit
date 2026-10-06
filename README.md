@@ -24,8 +24,8 @@
 
 ## 你需要准备
 
-1. 一台能 SSH 登录的 Linux 服务器（Ubuntu 24.04 或 Debian 12，需要 Python 3.11 以上；root 或 sudo 权限，1 核 1G 就够）。
-2. 一个你能管理 DNS 的域名，准备两个子域名：一个给公开工具，一个给保险库。
+1. 一台能 SSH 登录的 Linux 服务器（Ubuntu 24.04 或 Debian 12，需要 Python 3.11 以上；root 或 sudo 权限，1 核 1G 就够）。上面已经跑着别的网站（比如 nginx）也行，AI 会把它接在你现有的网站服务后面。
+2. 一个你能管理 DNS 的域名，准备两个子域名：一个给公开工具，一个给保险库。服务器在中国大陆的话，域名需要先备案。
 3. 手机上的验证器 App（Google Authenticator、Microsoft Authenticator、1Password 等都行）。
 4. 一台电脑，加上一个 AI 编程工具。缺什么环境，AI 会帮你装。
 

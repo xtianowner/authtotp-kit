@@ -2,6 +2,12 @@
 
 # Changelog
 
+## 0.2.0 · installer checks first, and your own HTTPS front
+
+- `deploy/install.sh` runs every check before it changes anything on the server. An existing `/etc/authtotp/env` is read with the vault's own origin rules, so several origins, an explicit `:443`, quotes and spaces are accepted on updates; a commented-out line, a look-alike domain or an invalid origin are refused with the reason. Before, a valid multi-origin setting blocked updates, and a failed check came after the new code was already copied.
+- `--external-https`: for servers where another web server (for example nginx) already owns ports 80/443, or where 80/443 cannot be reached. The installer leaves HTTPS and every web server alone, accepts addresses with a port, and writes reference configs for nginx and Caddy to `/etc/authtotp/proxy/`. The mode is remembered; a re-run in the other mode is refused.
+- `AGENTS.md`: §2 picks the HTTPS mode with the user (including plain words about home broadband and ICP filing for servers in mainland China), new §12 for your own HTTPS front, and the final check now confirms that an internet visitor cannot use the first-setup path reserved for the SSH tunnel.
+
 ## 0.1.0 · first public release
 
 - Public TOTP tool: paste a Base32 secret, get the code in the browser. Static files only; the page's CSP blocks every network request and the secret is never stored.
